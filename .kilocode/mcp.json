@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env": {
+        "DEFAULT_MINIMUM_TOKENS": ""
+      }
+    },
+    "sequentialthinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "mysql": {
+      "type": "stdio",
+      "command": "C:\\Users\\nbton\\.local\\bin\\mysql_mcp_server.exe",
+      "args": [],
+      "env": {
+        "MYSQL_HOST": "127.0.0.1",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "root",
+        "MYSQL_PASSWORD": "Asd11011",
+        "MYSQL_DATABASE": "Horses"
+      },
+      "alwaysAllow": [
+        "execute_sql"
+      ]
+    }
+  }
+}
