@@ -75,19 +75,29 @@ class DatabaseManager:
                 self.get_connection()
             
             cursor = self.connection.cursor()
-            cursor.callproc(procedure_name, params)
+            
+            # Call the stored procedure with parameters
+            if params:
+                cursor.callproc(procedure_name, params)
+            else:
+                cursor.callproc(procedure_name)
+            
+            # Commit the transaction
+            self.connection.commit()
             
             # Get results if any
             results = []
             for result in cursor.stored_results():
                 results.extend(result.fetchall())
             
-            return results
+            return results if results else True
                 
         except Error as e:
             print(f"Error executing procedure: {e}")
+            if self.connection:
+                self.connection.rollback()
             messagebox.showerror("Database Error", f"Procedure execution failed: {e}")
-            return None
+            raise e
         finally:
             if cursor:
                 cursor.close()

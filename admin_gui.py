@@ -84,8 +84,8 @@ class AdminGUI:
         
         tk.Label(info_frame, text="Track:", bg="#34495E", fg="white", font=("Arial", 10)).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.track_var = tk.StringVar()
-        track_combo = ttk.Combobox(info_frame, textvariable=self.track_var, state="readonly")
-        track_combo.grid(row=1, column=1, padx=10, pady=5)
+        self.track_combo = ttk.Combobox(info_frame, textvariable=self.track_var, state="readonly", width=28)
+        self.track_combo.grid(row=1, column=1, padx=10, pady=5)
         
         tk.Label(info_frame, text="Race Date (YYYY-MM-DD):", bg="#34495E", fg="white", font=("Arial", 10)).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.race_date_var = tk.StringVar()
@@ -194,11 +194,17 @@ class AdminGUI:
         
         tk.Label(move_details_frame, text="New Stable:", bg="#34495E", fg="white", font=("Arial", 10)).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.new_stable_var = tk.StringVar()
-        stable_combo = ttk.Combobox(move_details_frame, textvariable=self.new_stable_var, state="readonly")
-        stable_combo.grid(row=2, column=1, padx=10, pady=5)
+        self.move_stable_combo = ttk.Combobox(move_details_frame, textvariable=self.new_stable_var, state="readonly", width=28)
+        self.move_stable_combo.grid(row=2, column=1, padx=10, pady=5)
         
-        # Load stables
-        self.load_stables()
+        # Load stables for this combobox
+        try:
+            stables = self.db_manager.execute_query("SELECT stableId, stableName FROM Stable ORDER BY stableName")
+            if stables:
+                stable_names = [f"{stable['stableId']}: {stable['stableName']}" for stable in stables]
+                self.move_stable_combo['values'] = stable_names
+        except Exception as e:
+            print(f"Error loading stables for move horse tab: {e}")
         
         # Buttons
         button_frame = tk.Frame(move_frame, bg="#34495E")
@@ -216,61 +222,80 @@ class AdminGUI:
         
     def create_approve_trainer_tab(self):
         """Create tab for approving new trainers"""
-        trainer_frame = ttk.Frame(self.notebook)
-        self.notebook.add(trainer_frame, text="Approve Trainer")
-        
-        # Title
-        title_label = tk.Label(
-            trainer_frame,
-            text="Approve New Trainer",
-            font=("Arial", 16, "bold"),
-            bg="#34495E",
-            fg="white"
-        )
-        title_label.pack(pady=20)
-        
-        # Trainer details frame
-        details_frame = tk.Frame(trainer_frame, bg="#34495E")
-        details_frame.pack(pady=20)
-        
-        tk.Label(details_frame, text="First Name:", bg="#34495E", fg="white", font=("Arial", 10)).grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.trainer_fname_var = tk.StringVar()
-        tk.Entry(details_frame, textvariable=self.trainer_fname_var, width=30).grid(row=0, column=1, padx=10, pady=5)
-        
-        tk.Label(details_frame, text="Last Name:", bg="#34495E", fg="white", font=("Arial", 10)).grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.trainer_lname_var = tk.StringVar()
-        tk.Entry(details_frame, textvariable=self.trainer_lname_var, width=30).grid(row=1, column=1, padx=10, pady=5)
-        
-        tk.Label(details_frame, text="Assign to Stable:", bg="#34495E", fg="white", font=("Arial", 10)).grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.trainer_stable_var = tk.StringVar()
-        trainer_stable_combo = ttk.Combobox(details_frame, textvariable=self.trainer_stable_var, state="readonly")
-        trainer_stable_combo.grid(row=2, column=1, padx=10, pady=5)
-        
-        # Load stables
-        self.load_stables()
-        
-        # Button
-        tk.Button(trainer_frame, text="Approve Trainer", command=self.approve_trainer, 
-                 bg="#27AE60", fg="white", font=("Arial", 12, "bold")).pack(pady=20)
+        try:
+            trainer_frame = ttk.Frame(self.notebook)
+            self.notebook.add(trainer_frame, text="Approve Trainer")
+            
+            # Title
+            title_label = tk.Label(
+                trainer_frame,
+                text="Approve New Trainer",
+                font=("Arial", 16, "bold"),
+                bg="#34495E",
+                fg="white"
+            )
+            title_label.pack(pady=20)
+            
+            # Trainer details frame
+            details_frame = tk.Frame(trainer_frame, bg="#34495E")
+            details_frame.pack(pady=20)
+            
+            tk.Label(details_frame, text="First Name:", bg="#34495E", fg="white", font=("Arial", 10)).grid(row=0, column=0, sticky=tk.W, pady=5)
+            self.trainer_fname_var = tk.StringVar()
+            tk.Entry(details_frame, textvariable=self.trainer_fname_var, width=30).grid(row=0, column=1, padx=10, pady=5)
+            
+            tk.Label(details_frame, text="Last Name:", bg="#34495E", fg="white", font=("Arial", 10)).grid(row=1, column=0, sticky=tk.W, pady=5)
+            self.trainer_lname_var = tk.StringVar()
+            tk.Entry(details_frame, textvariable=self.trainer_lname_var, width=30).grid(row=1, column=1, padx=10, pady=5)
+            
+            tk.Label(details_frame, text="Assign to Stable:", bg="#34495E", fg="white", font=("Arial", 10)).grid(row=2, column=0, sticky=tk.W, pady=5)
+            self.trainer_stable_var = tk.StringVar()
+            self.trainer_stable_combo = ttk.Combobox(details_frame, textvariable=self.trainer_stable_var, state="readonly", width=28)
+            self.trainer_stable_combo.grid(row=2, column=1, padx=10, pady=5)
+            
+            # Load stables for this combobox
+            try:
+                stables = self.db_manager.execute_query("SELECT stableId, stableName FROM Stable ORDER BY stableName")
+                if stables:
+                    stable_names = [f"{stable['stableId']}: {stable['stableName']}" for stable in stables]
+                    self.trainer_stable_combo['values'] = stable_names
+            except Exception as e:
+                print(f"Error loading stables for trainer tab: {e}")
+            
+            # Button
+            tk.Button(trainer_frame, text="Approve Trainer", command=self.approve_trainer, 
+                     bg="#27AE60", fg="white", font=("Arial", 12, "bold")).pack(pady=20)
+        except Exception as e:
+            print(f"Error creating approve trainer tab: {e}")
+            messagebox.showerror("Error", f"Failed to create Approve Trainer tab: {e}")
         
     def load_tracks(self):
         """Load available tracks"""
         try:
-            tracks = self.db_manager.execute_query("SELECT trackName FROM Track")
+            tracks = self.db_manager.execute_query("SELECT trackName FROM Track ORDER BY trackName")
             if tracks:
                 track_names = [track['trackName'] for track in tracks]
-                # Update combobox
-                for child in self.root.winfo_children():
-                    if isinstance(child, ttk.Notebook):
-                        for tab in child.winfo_children():
-                            if isinstance(tab, ttk.Frame):
-                                for widget in tab.winfo_children():
-                                    if isinstance(widget, tk.Frame):
-                                        for child_widget in widget.winfo_children():
-                                            if isinstance(child_widget, ttk.Combobox):
-                                                child_widget['values'] = track_names
+                self.track_combo['values'] = track_names
+                if track_names:
+                    self.track_combo.current(0)  # Select first track by default
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load tracks: {e}")
+    
+    def convert_position_to_text(self, position):
+        """Convert numeric position to text format for database consistency"""
+        position_map = {
+            1: 'first',
+            2: 'second',
+            3: 'third',
+            4: 'fourth',
+            5: 'fifth',
+            6: 'sixth',
+            7: 'seventh',
+            8: 'eighth',
+            9: 'ninth',
+            10: 'tenth'
+        }
+        return position_map.get(position, str(position))
     
     def load_owners(self):
         """Load owners for deletion"""
@@ -287,23 +312,8 @@ class AdminGUI:
             messagebox.showerror("Error", f"Failed to load owners: {e}")
     
     def load_stables(self):
-        """Load stables for selection"""
-        try:
-            stables = self.db_manager.execute_query("SELECT stableId, stableName FROM Stable ORDER BY stableName")
-            if stables:
-                stable_names = [f"{stable['stableId']}: {stable['stableName']}" for stable in stables]
-                # Update all stable comboboxes
-                for child in self.root.winfo_children():
-                    if isinstance(child, ttk.Notebook):
-                        for tab in child.winfo_children():
-                            if isinstance(tab, ttk.Frame):
-                                for widget in tab.winfo_children():
-                                    if isinstance(widget, tk.Frame):
-                                        for child_widget in widget.winfo_children():
-                                            if isinstance(child_widget, ttk.Combobox):
-                                                child_widget['values'] = stable_names
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to load stables: {e}")
+        """Load stables for selection - kept for compatibility but not actively used"""
+        pass
     
     def add_result(self):
         """Add a race result"""
@@ -315,42 +325,60 @@ class AdminGUI:
         tk.Label(result_window, text="Add Race Result", font=("Arial", 14, "bold"), 
                 bg="#34495E", fg="white").pack(pady=10)
         
+        # Result details frame
+        details_frame = tk.Frame(result_window, bg="#34495E")
+        details_frame.pack(pady=20)
+        
         # Result details
-        tk.Label(result_window, text="Horse ID:", bg="#34495E", fg="white").grid(row=0, column=0, sticky=tk.W, pady=5)
+        tk.Label(details_frame, text="Horse ID:", bg="#34495E", fg="white").grid(row=0, column=0, sticky=tk.W, pady=5, padx=10)
         horse_id_var = tk.StringVar()
-        tk.Entry(result_window, textvariable=horse_id_var).grid(row=0, column=1, padx=10, pady=5)
+        tk.Entry(details_frame, textvariable=horse_id_var, width=20).grid(row=0, column=1, padx=10, pady=5)
         
-        tk.Label(result_window, text="Final Position:", bg="#34495E", fg="white").grid(row=1, column=0, sticky=tk.W, pady=5)
+        tk.Label(details_frame, text="Final Position:", bg="#34495E", fg="white").grid(row=1, column=0, sticky=tk.W, pady=5, padx=10)
         position_var = tk.StringVar()
-        tk.Entry(result_window, textvariable=position_var).grid(row=1, column=1, padx=10, pady=5)
+        tk.Entry(details_frame, textvariable=position_var, width=20).grid(row=1, column=1, padx=10, pady=5)
         
-        tk.Label(result_window, text="Prize Money:", bg="#34495E", fg="white").grid(row=2, column=0, sticky=tk.W, pady=5)
+        tk.Label(details_frame, text="Prize Money:", bg="#34495E", fg="white").grid(row=2, column=0, sticky=tk.W, pady=5, padx=10)
         prize_var = tk.StringVar()
-        tk.Entry(result_window, textvariable=prize_var).grid(row=2, column=1, padx=10, pady=5)
+        tk.Entry(details_frame, textvariable=prize_var, width=20).grid(row=2, column=1, padx=10, pady=5)
         
         def save_result():
             try:
-                horse_id = int(horse_id_var.get())
+                horse_id = horse_id_var.get().strip()
                 position = int(position_var.get())
                 prize = float(prize_var.get())
                 
+                if not horse_id:
+                    messagebox.showerror("Error", "Please enter a horse ID")
+                    return
+                
+                # Verify the horse exists
+                horse_info = self.db_manager.execute_query("SELECT horseName FROM Horse WHERE horseId = %s", (horse_id,))
+                if not horse_info:
+                    messagebox.showerror("Error", f"Horse with ID '{horse_id}' not found")
+                    return
+                
+                # Convert numeric position to text format for database consistency
+                position_text = self.convert_position_to_text(position)
+                
                 self.results_data.append({
                     'horseId': horse_id,
-                    'position': position,
+                    'position': position_text,
                     'prize': prize
                 })
                 
                 # Add to listbox
-                horse_info = self.db_manager.execute_query("SELECT horseName FROM Horse WHERE horseId = %s", (horse_id,))
-                if horse_info:
-                    horse_name = horse_info[0]['horseName']
-                    self.results_listbox.insert(tk.END, f"{position}: {horse_name} (${prize:,.2f})")
+                horse_name = horse_info[0]['horseName']
+                self.results_listbox.insert(tk.END, f"Position {position}: {horse_name} (Horse ID: {horse_id}) - ${prize:,.2f}")
                 
                 result_window.destroy()
-            except ValueError:
-                messagebox.showerror("Error", "Please enter valid numbers")
+            except ValueError as ve:
+                messagebox.showerror("Error", "Please enter valid numbers for position and prize")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to add result: {e}")
         
-        tk.Button(result_window, text="Save", command=save_result, bg="#27AE60", fg="white").pack(pady=20)
+        tk.Button(result_window, text="Save Result", command=save_result, bg="#27AE60", fg="white", 
+                 font=("Arial", 10, "bold")).pack(pady=20)
     
     def remove_result(self):
         """Remove selected result"""
@@ -376,16 +404,22 @@ class AdminGUI:
                 messagebox.showerror("Error", "All race fields are required")
                 return
             
+            if not self.results_data:
+                messagebox.showerror("Error", "Please add at least one race result")
+                return
+            
+            # Generate a unique race ID
+            import time
+            race_id = f"race{int(time.time()) % 100000}"
+            
             # Insert race
             query = """
-                INSERT INTO Race (raceName, trackName, raceDate, raceTime) 
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO Race (raceId, raceName, trackName, raceDate, raceTime) 
+                VALUES (%s, %s, %s, %s, %s)
             """
-            result = self.db_manager.execute_query(query, (race_name, track_name, race_date, race_time))
+            result = self.db_manager.execute_query(query, (race_id, race_name, track_name, race_date, race_time))
             
-            if result:
-                race_id = self.db_manager.execute_query("SELECT LAST_INSERT_ID() as raceId")[0]['raceId']
-                
+            if result is not None:
                 # Insert results
                 for result_data in self.results_data:
                     query = """
@@ -399,7 +433,7 @@ class AdminGUI:
                         result_data['prize']
                     ))
                 
-                messagebox.showinfo("Success", "Race added successfully!")
+                messagebox.showinfo("Success", f"Race added successfully! Race ID: {race_id}")
                 
                 # Clear form
                 self.race_name_var.set("")
@@ -423,18 +457,15 @@ class AdminGUI:
                 return
             
             owner_text = self.owner_listbox.get(selection[0])
-            owner_id = owner_text.split(':')[0]  # Keep as string
+            owner_id = owner_text.split(':')[0].strip()  # Extract and clean the owner ID
             
             # Confirm deletion
-            if messagebox.askyesno("Confirm", "Are you sure you want to delete this owner? This action cannot be undone."):
+            if messagebox.askyesno("Confirm", f"Are you sure you want to delete owner {owner_id}? This will also remove all ownership relationships. This action cannot be undone."):
                 # Call stored procedure
-                result = self.db_manager.execute_procedure("DeleteOwner", (owner_id,))
+                result = self.db_manager.execute_procedure("DeleteOwner", [owner_id])
                 
-                if result is not None:
-                    messagebox.showinfo("Success", "Owner deleted successfully!")
-                    self.load_owners()  # Refresh the list
-                else:
-                    messagebox.showerror("Error", "Failed to delete owner")
+                messagebox.showinfo("Success", f"Owner {owner_id} deleted successfully!")
+                self.load_owners()  # Refresh the list
                     
         except Exception as e:
             messagebox.showerror("Error", f"Failed to delete owner: {e}")
@@ -471,20 +502,31 @@ class AdminGUI:
         """Move horse to new stable"""
         try:
             horse_id = self.horse_id_var.get().strip()
-            new_stable_text = self.new_stable_var.get()
+            new_stable_text = self.new_stable_var.get().strip()
             
-            if not horse_id or not new_stable_text:
-                messagebox.showerror("Error", "Please enter horse ID and select a new stable")
+            if not horse_id:
+                messagebox.showerror("Error", "Please enter a horse ID")
                 return
             
-            new_stable_id = new_stable_text.split(':')[0]  # Keep as string
+            if not new_stable_text:
+                messagebox.showerror("Error", "Please select a new stable")
+                return
+            
+            # Extract stable ID from the combobox text (format: "stableId: stableName")
+            new_stable_id = new_stable_text.split(':')[0].strip()
+            
+            # Verify the horse exists first
+            horse_check = self.db_manager.execute_query("SELECT horseId FROM Horse WHERE horseId = %s", (horse_id,))
+            if not horse_check:
+                messagebox.showerror("Error", f"Horse with ID '{horse_id}' not found")
+                return
             
             # Update horse stable
             query = "UPDATE Horse SET stableId = %s WHERE horseId = %s"
             result = self.db_manager.execute_query(query, (new_stable_id, horse_id))
             
-            if result:
-                messagebox.showinfo("Success", f"Horse moved to stable {new_stable_id}")
+            if result is not None and result > 0:
+                messagebox.showinfo("Success", f"Horse {horse_id} moved to stable {new_stable_id} successfully!")
                 self.check_horse_info()  # Refresh info
             else:
                 messagebox.showerror("Error", "Failed to move horse")
@@ -497,23 +539,29 @@ class AdminGUI:
         try:
             fname = self.trainer_fname_var.get().strip()
             lname = self.trainer_lname_var.get().strip()
-            stable_text = self.trainer_stable_var.get()
+            stable_text = self.trainer_stable_var.get().strip()
             
-            if not all([fname, lname, stable_text]):
-                messagebox.showerror("Error", "All trainer fields are required")
+            if not fname or not lname:
+                messagebox.showerror("Error", "First name and last name are required")
                 return
             
-            stable_id = stable_text.split(':')[0]  # Keep as string
+            if not stable_text:
+                messagebox.showerror("Error", "Please select a stable")
+                return
             
-            # Generate a simple trainer ID
-            trainer_id = f"trainer{hash(fname + lname + stable_id) % 1000:03d}"
+            # Extract stable ID from the combobox text (format: "stableId: stableName")
+            stable_id = stable_text.split(':')[0].strip()
+            
+            # Generate a unique trainer ID using timestamp
+            import time
+            trainer_id = f"T{int(time.time()) % 100000}"
             
             # Insert new trainer
             query = "INSERT INTO Trainer (trainerId, fname, lname, stableId) VALUES (%s, %s, %s, %s)"
             result = self.db_manager.execute_query(query, (trainer_id, fname, lname, stable_id))
             
-            if result:
-                messagebox.showinfo("Success", f"Trainer approved successfully! ID: {trainer_id}")
+            if result is not None and result > 0:
+                messagebox.showinfo("Success", f"Trainer {fname} {lname} approved successfully!\nTrainer ID: {trainer_id}\nAssigned to Stable: {stable_id}")
                 # Clear form
                 self.trainer_fname_var.set("")
                 self.trainer_lname_var.set("")
